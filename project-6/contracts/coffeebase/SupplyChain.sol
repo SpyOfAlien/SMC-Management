@@ -321,7 +321,7 @@ contract SupplyChain is
     )
         public
         // Call modifier to check if upc has passed previous supply chain stage
-        received(_upc)
+        shipped(_upc)
         // Access Control List enforced by calling Smart Contract / DApp
         onlyRetailer
     {
