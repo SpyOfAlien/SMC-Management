@@ -16,12 +16,6 @@ contract SupplyChain is
     // Define 'owner'
     address owner;
 
-    // Define a variable called 'upc' for Universal Product Code (UPC)
-    uint upc;
-
-    // Define a variable called 'sku' for Stock Keeping Unit (SKU)
-    uint sku;
-
     // Define a public mapping 'items' that maps the UPC to an Item.
     mapping(uint => Item) items;
 
@@ -169,12 +163,8 @@ contract SupplyChain is
     }
 
     // In the constructor set 'owner' to the address that instantiated the contract
-    // and set 'sku' to 1
-    // and set 'upc' to 1
     constructor() public payable {
         owner = msg.sender;
-        sku = 1;
-        upc = 1;
     }
 
     // Define a function 'kill' if required
@@ -193,28 +183,29 @@ contract SupplyChain is
         string _originFarmLatitude,
         string _originFarmLongitude,
         string _productNotes
-    ) public onlyFarmer {
+    ) public onlyFarmer verifyCaller(_originFarmerID) {
         // Add the new item as part of Harvest
-        items[_upc] = Item({
-            sku: sku,
-            upc: _upc,
-            ownerID: _originFarmerID,
-            originFarmerID: _originFarmerID,
-            originFarmName: _originFarmName,
-            originFarmInformation: _originFarmInformation,
-            originFarmLatitude: _originFarmLatitude,
-            originFarmLongitude: _originFarmLongitude,
-            productID: _upc + sku,
-            productNotes: _productNotes,
-            productPrice: 0,
-            itemState: State.Harvested,
-            distributorID: 0,
-            retailerID: 0,
-            consumerID: 0
-        });
-
-        // Increment sku
-        sku = sku + 1;
+        if (items[_upc].sku == 0) {
+            items[_upc] = Item({
+                sku: 1,
+                upc: _upc,
+                ownerID: _originFarmerID,
+                originFarmerID: _originFarmerID,
+                originFarmName: _originFarmName,
+                originFarmInformation: _originFarmInformation,
+                originFarmLatitude: _originFarmLatitude,
+                originFarmLongitude: _originFarmLongitude,
+                productID: _upc,
+                productNotes: _productNotes,
+                productPrice: 0,
+                itemState: State.Harvested,
+                distributorID: 0,
+                retailerID: 0,
+                consumerID: 0
+            });
+        } else {
+            items[_upc].sku = items[_upc].sku + 1;
+        }
 
         // Emit the appropriate event
         emit Harvested(_upc);
@@ -386,7 +377,7 @@ contract SupplyChain is
         itemSKU = item.sku;
         itemUPC = item.upc;
         ownerID = item.ownerID;
-        originFarmerID = item.originFarmerID;
+        originFarmerID = item.ownerID;
         originFarmName = item.originFarmName;
         originFarmInformation = item.originFarmInformation;
         originFarmLatitude = item.originFarmLatitude;

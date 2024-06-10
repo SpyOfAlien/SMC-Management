@@ -37,22 +37,6 @@ App = {
     App.distributorID = $("#distributorID").val();
     App.retailerID = $("#retailerID").val();
     App.consumerID = $("#consumerID").val();
-
-    console.log(
-      App.sku,
-      App.upc,
-      App.ownerID,
-      App.originFarmerID,
-      App.originFarmName,
-      App.originFarmInformation,
-      App.originFarmLatitude,
-      App.originFarmLongitude,
-      App.productNotes,
-      App.productPrice,
-      App.distributorID,
-      App.retailerID,
-      App.consumerID
-    );
   },
 
   initWeb3: async function () {
@@ -62,12 +46,20 @@ App = {
       App.web3Provider = window.ethereum;
       try {
         // Request account access
-        const accounts = window.ethereum.request({
+        const accounts = await window.ethereum.request({
           method: "eth_requestAccounts",
+        });
+
+        window.ethereum.on("accountsChanged", function (accounts) {
+          // Time to reload your interface with accounts[0]!
+          App.metamaskAccountID = accounts[0];
+          console.log("metamaskAccountID", App.metamaskAccountID);
         });
 
         App.ownerID = accounts[0];
         App.originFarmerID = accounts[0];
+        App.metamaskAccountID = accounts[0];
+
         window.web3 = new Web3(App.web3Provider);
 
         App.initSupplyChain();
@@ -79,33 +71,17 @@ App = {
     }
   },
 
-  getMetaskAccountID: function () {
-    web3 = new Web3(App.web3Provider);
-
-    // Retrieving accounts
-    web3.eth.getAccounts(function (err, res) {
-      if (err) {
-        console.log("Error:", err);
-        return;
-      }
-      console.log("getMetaskID:", res);
-      App.metamaskAccountID = res[0];
-    });
-  },
-
   initSupplyChain: function () {
     /// Source the truffle compiled smart contracts
-    var jsonSupplyChain = "../../build/contracts/SupplyChain.json";
+    const jsonSupplyChain = "../../build/contracts/SupplyChain.json";
 
     /// JSONfy the smart contracts
     $.getJSON(jsonSupplyChain, function (data) {
       console.log("data", data);
-      var SupplyChainArtifact = data;
+      const SupplyChainArtifact = data;
       App.contracts.SupplyChain = TruffleContract(SupplyChainArtifact);
       App.contracts.SupplyChain.setProvider(App.web3Provider);
 
-      App.fetchItemBufferOne();
-      App.fetchItemBufferTwo();
       App.fetchEvents();
     });
 
@@ -119,7 +95,7 @@ App = {
   handleButtonClick: async function (event) {
     event.preventDefault();
 
-    App.getMetaskAccountID();
+    App.readForm();
 
     var processId = parseInt($(event.target).data("id"));
     console.log("processId", processId);
@@ -154,13 +130,14 @@ App = {
         break;
       case 10:
         return await App.fetchItemBufferTwo(event);
+      case 11:
+        return await App.generateRandomUPC(event);
         break;
     }
   },
 
   harvestItem: function (event) {
     event.preventDefault();
-    var processId = parseInt($(event.target).data("id"));
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
@@ -171,12 +148,17 @@ App = {
           App.originFarmInformation,
           App.originFarmLatitude,
           App.originFarmLongitude,
-          App.productNotes
+          App.productNotes,
+          {
+            from: App.metamaskAccountID,
+            gas: 6721975,
+            gasPrice: 20000000000,
+          }
         );
       })
       .then(function (result) {
         $("#ftc-item").text(result);
-        console.log("harvestItem", result);
+        App.fetchItemBufferOne();
       })
       .catch(function (err) {
         console.log(err.message);
@@ -185,7 +167,6 @@ App = {
 
   processItem: function (event) {
     event.preventDefault();
-    var processId = parseInt($(event.target).data("id"));
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
@@ -223,7 +204,7 @@ App = {
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        const productPrice = web3.toWei(1000000, "gwei");
+        const productPrice = web3.utils.toWei(1000000, "gwei");
         console.log("productPrice", productPrice);
         return instance.sellItem(App.upc, App.productPrice, {
           from: App.metamaskAccountID,
@@ -244,7 +225,7 @@ App = {
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        const walletValue = web3.toWei(2000000, "gwei");
+        const walletValue = web3.utils.toWei(2000000, "gwei");
         return instance.buyItem(App.upc, {
           from: App.metamaskAccountID,
           value: walletValue,
@@ -310,15 +291,10 @@ App = {
       });
   },
 
-  fetchItemBufferOne: function () {
-    ///   event.preventDefault();
-    ///    var processId = parseInt($(event.target).data('id'));
-    App.upc = $("#upc").val();
-    console.log("upc", App.upc);
-
+  fetchItemBufferOne: function (upc = null) {
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        return instance.fetchItemBufferOne(App.upc);
+        return instance.fetchItemBufferOne(upc || $("#upc").val());
       })
       .then(function (result) {
         $("#ftc-item").text(result);
@@ -370,6 +346,40 @@ App = {
       .catch(function (err) {
         console.log(err.message);
       });
+  },
+
+  generateRandomUPC: () => {
+    // Generate the first 11 digits randomly
+    let upc = "";
+    for (let i = 0; i < 11; i++) {
+      upc += Math.floor(Math.random() * 10);
+    }
+
+    // Calculate the check digit
+    let checkDigit = App.calculateCheckDigit(upc);
+
+    // Append the check digit to the UPC
+    upc += checkDigit;
+
+    $("#upcCreate").val(upc);
+  },
+
+  calculateCheckDigit: (upc) => {
+    let sum = 0;
+
+    for (let i = 0; i < upc.length; i++) {
+      let digit = parseInt(upc[i], 10);
+
+      // Multiply odd position digits by 3
+      if (i % 2 === 0) {
+        sum += digit * 3;
+      } else {
+        sum += digit;
+      }
+    }
+
+    // The check digit is the amount needed to round the sum up to the nearest 10
+    return (10 - (sum % 10)) % 10;
   },
 };
 

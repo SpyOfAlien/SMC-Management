@@ -4,8 +4,14 @@ require("dotenv").config();
 module.exports = {
   networks: {
     development: {
-      host: "127.0.0.1",
-      port: 8545,
+      provider: function () {
+        return new HDWallet(
+          "coral siege okay vendor pledge uniform pink swap cactus mandate tribe cushion",
+          "http://127.0.0.1:8545/",
+          0,
+          50
+        );
+      },
       network_id: "*", // Match any network id
     },
     sepolia: {
