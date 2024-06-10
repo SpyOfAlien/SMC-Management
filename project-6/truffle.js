@@ -15,14 +15,38 @@ module.exports = {
       network_id: "*", // Match any network id
     },
     sepolia: {
+      provider: () => {
+        return new HDWallet(
+          process.env.MNEMONIC,
+          `https://sepolia.infura.io/v3/${process.env.INFURA_KEY}`
+        );
+      },
+      networkCheckTimeout: 10000000,
+      timeoutBlocks: 600,
+      gasPrice: 50000000000,
+      network_id: 11155111, // Sepolia's id
+      skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
+    },
+    bscTestnet: {
       provider: () =>
         new HDWallet(
           process.env.MNEMONIC,
-          `https://sepolia.infura.io/v3/${process.env.INFURA_KEY}`
+          `https://data-seed-prebsc-1-s1.binance.org:8545/` // BSC Testnet RPC URL
         ),
-      networkCheckTimeout: 1000000,
-      timeoutBlocks: 500,
-      network_id: 11155111, // Sepolia's id
+      network_id: 97, // BSC Testnet ID
+      confirmations: 10, // Number of confirmations to wait between deployments
+      timeoutBlocks: 200, // Number of blocks before a deployment times out
+      skipDryRun: true, // Skip dry run before migrations? (default: false for public nets)
+    },
+    holesky: {
+      provider: () =>
+        new HDWallet(
+          process.env.MNEMONIC,
+          `https://holesky.infura.io/v3/a85b7fe4a3e948e596d571e6a42a01fb`
+        ),
+      networkCheckTimeout: 10000000,
+      timeoutBlocks: 600,
+      network_id: 17000, // Sepolia's id
       skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
     },
   },
