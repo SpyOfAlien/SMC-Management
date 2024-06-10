@@ -2710,12 +2710,12 @@
     "5777": {
       "events": {},
       "links": {},
-      "address": "0x7beFA13c5e9526e68269E5E92D2eA8F805cfb249",
-      "transactionHash": "0xe64aa42cc8498b123acd2458681a519fd39ed8aff0d06e9603e08d2a3edb5a02"
+      "address": "0xfaea3Fa056C997C1Cde0350661ab6B38C155Bf4A",
+      "transactionHash": "0x45e7835dca89ee26d4cd17ac12a11e93aa9ae9283e51f5b4575d217dd8c93104"
     }
   },
   "schemaVersion": "3.4.16",
-  "updatedAt": "2024-06-10T11:44:17.376Z",
+  "updatedAt": "2024-06-10T11:50:47.327Z",
   "networkType": "ethereum",
   "devdoc": {
     "methods": {}
