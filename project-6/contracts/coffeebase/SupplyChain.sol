@@ -371,17 +371,17 @@ contract SupplyChain is
             string originFarmLongitude
         )
     {
-        // Assign values to the 8 parameters
-        Item memory item = items[_upc];
+        require(items[_upc].sku > 0, "Item does not exist");
 
-        itemSKU = item.sku;
-        itemUPC = item.upc;
-        ownerID = item.ownerID;
-        originFarmerID = item.ownerID;
-        originFarmName = item.originFarmName;
-        originFarmInformation = item.originFarmInformation;
-        originFarmLatitude = item.originFarmLatitude;
-        originFarmLongitude = item.originFarmLongitude;
+        // Assign values to the 8 parameters
+        itemSKU = items[_upc].sku;
+        itemUPC = items[_upc].upc;
+        ownerID = items[_upc].ownerID;
+        originFarmerID = items[_upc].ownerID;
+        originFarmName = items[_upc].originFarmName;
+        originFarmInformation = items[_upc].originFarmInformation;
+        originFarmLatitude = items[_upc].originFarmLatitude;
+        originFarmLongitude = items[_upc].originFarmLongitude;
 
         return (
             itemSKU,
@@ -413,17 +413,17 @@ contract SupplyChain is
             address consumerID
         )
     {
+        require(items[_upc].sku > 0, "Item does not exist");
         // Assign values to the 9 parameters
-        Item memory item = items[_upc];
-        itemSKU = item.sku;
-        itemUPC = item.upc;
-        productID = item.productID;
-        productNotes = item.productNotes;
-        productPrice = item.productPrice;
-        itemState = uint(item.itemState);
-        distributorID = item.distributorID;
-        retailerID = item.retailerID;
-        consumerID = item.consumerID;
+        itemSKU = items[_upc].sku;
+        itemUPC = items[_upc].upc;
+        productID = items[_upc].productID;
+        productNotes = items[_upc].productNotes;
+        productPrice = items[_upc].productPrice;
+        itemState = uint(items[_upc].itemState);
+        distributorID = items[_upc].distributorID;
+        retailerID = items[_upc].retailerID;
+        consumerID = items[_upc].consumerID;
 
         return (
             itemSKU,

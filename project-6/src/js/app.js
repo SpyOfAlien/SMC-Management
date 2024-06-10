@@ -126,10 +126,10 @@ App = {
         return await App.purchaseItem(event);
         break;
       case 9:
-        return await App.fetchItemBufferOne(event);
+        return await App.fetchItemBufferOne();
         break;
       case 10:
-        return await App.fetchItemBufferTwo(event);
+        return await App.fetchItemBufferTwo();
       case 11:
         return await App.generateRandomUPC(event);
         break;
@@ -139,10 +139,14 @@ App = {
   harvestItem: function (event) {
     event.preventDefault();
 
+    const upc = $("#upcCreate").val();
+
+    console.log("upc", upc);
+
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
         return instance.harvestItem(
-          App.upc,
+          +upc,
           App.metamaskAccountID,
           App.originFarmName,
           App.originFarmInformation,
@@ -158,7 +162,7 @@ App = {
       })
       .then(function (result) {
         $("#ftc-item").text(result);
-        App.fetchItemBufferOne();
+        App.fetchItemBufferOne(+upc);
       })
       .catch(function (err) {
         console.log(err.message);
@@ -183,11 +187,12 @@ App = {
 
   packItem: function (event) {
     event.preventDefault();
-    var processId = parseInt($(event.target).data("id"));
+
+    const upc = +$("#upc").val();
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        return instance.packItem(App.upc, { from: App.metamaskAccountID });
+        return instance.packItem(upc, { from: App.metamaskAccountID });
       })
       .then(function (result) {
         $("#ftc-item").text(result);
@@ -200,19 +205,19 @@ App = {
 
   sellItem: function (event) {
     event.preventDefault();
-    var processId = parseInt($(event.target).data("id"));
+    const upc = +$("#upc").val();
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        const productPrice = web3.utils.toWei(1000000, "gwei");
+        const productPrice = web3.utils.toWei(1, "ether");
         console.log("productPrice", productPrice);
-        return instance.sellItem(App.upc, App.productPrice, {
+        return instance.sellItem(upc, productPrice, {
           from: App.metamaskAccountID,
         });
       })
       .then(function (result) {
-        $("#ftc-item").text(result);
         console.log("sellItem", result);
+        App.fetchItemBufferTwo(upc);
       })
       .catch(function (err) {
         console.log(err.message);
@@ -221,19 +226,19 @@ App = {
 
   buyItem: function (event) {
     event.preventDefault();
-    var processId = parseInt($(event.target).data("id"));
+    const upc = +$("#upc").val();
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        const walletValue = web3.utils.toWei(2000000, "gwei");
-        return instance.buyItem(App.upc, {
+        const walletValue = web3.utils.toWei(1, "ether");
+        return instance.buyItem(upc, {
           from: App.metamaskAccountID,
           value: walletValue,
         });
       })
       .then(function (result) {
-        $("#ftc-item").text(result);
         console.log("buyItem", result);
+        App.fetchItemBufferTwo(upc);
       })
       .catch(function (err) {
         console.log(err.message);
@@ -242,11 +247,11 @@ App = {
 
   shipItem: function (event) {
     event.preventDefault();
-    var processId = parseInt($(event.target).data("id"));
+    const upc = +$("#upc").val();
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        return instance.shipItem(App.upc, { from: App.metamaskAccountID });
+        return instance.shipItem(upc, { from: App.metamaskAccountID });
       })
       .then(function (result) {
         $("#ftc-item").text(result);
@@ -259,15 +264,16 @@ App = {
 
   receiveItem: function (event) {
     event.preventDefault();
-    var processId = parseInt($(event.target).data("id"));
+    const upc = +$("#upc").val();
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        return instance.receiveItem(App.upc, { from: App.metamaskAccountID });
+        return instance.receiveItem(upc, { from: App.metamaskAccountID });
       })
       .then(function (result) {
         $("#ftc-item").text(result);
         console.log("receiveItem", result);
+        App.fetchItemBufferTwo(upc);
       })
       .catch(function (err) {
         console.log(err.message);
@@ -276,15 +282,16 @@ App = {
 
   purchaseItem: function (event) {
     event.preventDefault();
-    var processId = parseInt($(event.target).data("id"));
+    const upc = +$("#upc").val();
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        return instance.purchaseItem(App.upc, { from: App.metamaskAccountID });
+        return instance.purchaseItem(upc, { from: App.metamaskAccountID });
       })
       .then(function (result) {
         $("#ftc-item").text(result);
         console.log("purchaseItem", result);
+        App.fetchItemBufferTwo(upc);
       })
       .catch(function (err) {
         console.log(err.message);
@@ -292,29 +299,65 @@ App = {
   },
 
   fetchItemBufferOne: function (upc = null) {
+    const payload = upc ? upc : +$("#upc").val();
+
+    console.log("fetchItemBufferOne", payload);
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        return instance.fetchItemBufferOne(upc || $("#upc").val());
+        return instance.fetchItemBufferOne(payload);
       })
       .then(function (result) {
-        $("#ftc-item").text(result);
-        console.log("fetchItemBufferOne", result);
+        const { ownerID, itemSKU, itemUPC } = result;
+        console.log(ownerID, itemSKU, itemUPC);
+        $("#sku").val(itemSKU.words[0]);
+        $("#upc").val(itemUPC.words[0]);
+        $("#ownerID").val(ownerID);
       })
       .catch(function (err) {
         console.log(err.message);
       });
   },
 
-  fetchItemBufferTwo: function () {
-    ///    event.preventDefault();
-    ///    var processId = parseInt($(event.target).data('id'));
+  fetchItemBufferTwo: function (upc = null) {
+    const payload = upc ? upc : +$("#upc").val();
+
+    console.log(upc);
 
     App.contracts.SupplyChain.deployed()
       .then(function (instance) {
-        return instance.fetchItemBufferTwo.call(App.upc);
+        return instance.fetchItemBufferTwo.call(payload);
       })
       .then(function (result) {
-        $("#ftc-item").text(result);
+        const {
+          distributorID,
+          consumerID,
+          retailerID,
+          productPrice,
+          productNotes,
+        } = result;
+        const fallbackAddress = "0x0000000000000000000000000000000000000000";
+
+        if (distributorID !== fallbackAddress) {
+          $("#distributorID").val(distributorID);
+        }
+
+        if (consumerID !== fallbackAddress) {
+          $("#consumerID").val(consumerID);
+        }
+
+        if (retailerID !== fallbackAddress) {
+          $("#retailerID").val(retailerID);
+        }
+
+        if (productNotes !== "") {
+          $("#productNotes").val(productNotes);
+        }
+
+        const price = web3.utils.fromWei(productPrice.toString(), "ether");
+        if (price !== "0") {
+          $("#productPrice").val(price);
+        }
+
         console.log("fetchItemBufferTwo", result);
       })
       .catch(function (err) {
@@ -349,37 +392,7 @@ App = {
   },
 
   generateRandomUPC: () => {
-    // Generate the first 11 digits randomly
-    let upc = "";
-    for (let i = 0; i < 11; i++) {
-      upc += Math.floor(Math.random() * 10);
-    }
-
-    // Calculate the check digit
-    let checkDigit = App.calculateCheckDigit(upc);
-
-    // Append the check digit to the UPC
-    upc += checkDigit;
-
-    $("#upcCreate").val(upc);
-  },
-
-  calculateCheckDigit: (upc) => {
-    let sum = 0;
-
-    for (let i = 0; i < upc.length; i++) {
-      let digit = parseInt(upc[i], 10);
-
-      // Multiply odd position digits by 3
-      if (i % 2 === 0) {
-        sum += digit * 3;
-      } else {
-        sum += digit;
-      }
-    }
-
-    // The check digit is the amount needed to round the sum up to the nearest 10
-    return (10 - (sum % 10)) % 10;
+    $("#upcCreate").val(Math.floor(Math.random() * 90000) + 10000);
   },
 };
 
